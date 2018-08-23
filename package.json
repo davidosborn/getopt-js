@@ -1,0 +1,85 @@
+{
+	"name": "@davidosborn/getopt",
+	"version": "0.0.10",
+	"description": "A full-featured parser for command-line arguments",
+	"keywords": [
+		"argument",
+		"arguments",
+		"getopt",
+		"getopts",
+		"option",
+		"options",
+		"parse",
+		"parser"
+	],
+	"homepage": "https://github.com/davidosborn/getopt#readme",
+	"bugs": {
+		"url": "https://github.com/davidosborn/getopt/issues",
+		"email": "david@davidosborn.io"
+	},
+	"license": "MIT",
+	"author": {
+		"name": "David Osborn",
+		"email": "david@davidosborn.io",
+		"url": "http://davidosborn.io/"
+	},
+	"files": [
+		"lib",
+		"src"
+	],
+	"main": "lib/getopt.js",
+	"bin": "index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/davidosborn/getopt"
+	},
+	"scripts": {
+		"build": "npx babel -d lib src",
+		"lint": "npx eslint src test",
+		"jest": "npx jest",
+		"prepublishOnly": "npm run build",
+		"start": "node index",
+		"test": "npm run lint && npm run jest"
+	},
+	"dependencies": {
+		"flat-map-polyfill": "*",
+		"lodash.defaultsdeep": "*",
+		"lodash.isstring": "*"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.0.0-beta",
+		"@babel/core": "^7.0.0-beta",
+		"@babel/register": "^7.0.0-beta",
+		"@davidosborn/babel-preset": "*",
+		"babel-core": "^7.0.0-beta",
+		"babel-eslint": "*",
+		"babel-jest": "*",
+		"eslint": "*",
+		"eslint-plugin-jest": "*",
+		"jest": "*"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"babel": {
+		"presets": [
+			"@davidosborn/babel-preset"
+		]
+	},
+	"eslintConfig": {
+		"env": {
+			"node": true
+		},
+		"parser": "babel-eslint",
+		"parserOptions": {
+			"ecmaVersion": 9,
+			"sourceType": "module"
+		},
+		"plugins": [
+			"jest"
+		]
+	},
+	"jest": {
+		"verbose": true
+	}
+}

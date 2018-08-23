@@ -1,0 +1,12 @@
+{
+	"options": [
+		{
+			"short": "h",
+			"long": "help"
+		},
+		{
+			"short": "v",
+			"long": "version"
+		}
+	]
+}
