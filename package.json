@@ -47,11 +47,10 @@
 		"lodash.isstring": "*"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.0.0",
-		"@babel/core": "^7.0.0",
-		"@babel/register": "^7.0.0",
+		"@babel/cli": "*",
+		"@babel/core": "*",
+		"@babel/register": "*",
 		"@davidosborn/babel-preset": "*",
-		"babel-core": "^7.0.0",
 		"babel-eslint": "*",
 		"babel-jest": "*",
 		"eslint": "*",
