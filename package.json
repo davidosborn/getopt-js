@@ -47,11 +47,11 @@
 		"lodash.isstring": "*"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.0.0-beta",
-		"@babel/core": "^7.0.0-beta",
-		"@babel/register": "^7.0.0-beta",
+		"@babel/cli": "^7.0.0",
+		"@babel/core": "^7.0.0",
+		"@babel/register": "^7.0.0",
 		"@davidosborn/babel-preset": "*",
-		"babel-core": "^7.0.0-beta",
+		"babel-core": "^7.0.0",
 		"babel-eslint": "*",
 		"babel-jest": "*",
 		"eslint": "*",
@@ -80,6 +80,7 @@
 		]
 	},
 	"jest": {
+		"testEnvironment": "node",
 		"verbose": true
 	}
 }
