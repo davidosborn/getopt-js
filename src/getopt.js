@@ -458,7 +458,7 @@ function _normalize(settings) {
  * @param {getopt~Settings} [settings] The configuration of the parser.
  */
 export function usage(settings) {
-	let program = settings.usage.program ?? path.basename(process.argv[1]).split('.', 1)[0]
+	let program = settings.usage?.program ?? path.basename(process.argv[1]).split('.', 1)[0]
 	process.stdout.write('Usage: ' + program + ' ' + settings.usage + '\n')
 
 	if (settings.options != null && settings.options.length > 0) {
