@@ -12,8 +12,11 @@ import ArgumentError from './argument-error'
  * @typedef {Object} getopt~Settings
  * @property {Array.<getopt~Option>} [options]       The specification of the optional parameters.
  * @property {Object}                [usage]         The configuration of the usage.
+ * @property {String}                [usage.header]  The content that will be displayed before the usage specification.
+ * @property {String}                [usage.footer]  The content that will be displayed after the usage specification.
  * @property {String}                [usage.program] The executable name of the calling program.
  * @property {String}                [usage.spec]    A line that contains the usage specification.
+ * @property {getopt~Callback}       [callback]      A function that will be called after parsing.
  * @property {String}                [version]       The version of the calling program.
  * @property {Function.<Error>}      [error=error]   A function that will be called when an error occurs.
  */
@@ -54,7 +57,9 @@ const _defaultOption = {
 /**
  * A function that will be called when a command-line argument is parsed.
  * @callback getopt~Callback
- * @param {getopt~Result} result The parsed result.
+ * @param {getopt~Result}   result   The parsed result.
+ * @param {Array.<String>}  args     The command-line arguments.
+ * @param {getopt~Settings} settings The configuration of the parser.
  */
 
 /**
@@ -96,7 +101,7 @@ const _defaultOption = {
  * @throws {ArgumentError} Thrown if any of the options are invalid.
  */
 export default function getopt(args, settings) {
-	_validate(args, settings)
+	requireValid(args, settings)
 	settings = _normalize(settings)
 
 	// Parse the arguments.
@@ -104,13 +109,15 @@ export default function getopt(args, settings) {
 	try {
 		parameters = Array.from(_parse1(args, settings),
 			function(result) {
-				if (settings.callback != null)
-					settings.callback(result)
+				// Execute the callback that is defined for the option.
+				if (result.parameter.option?.callback != null)
+					result.parameter.option.callback(result, args, settings)
 				return result.parameter
 			})
 	}
 	catch (e) {
-		settings.error(e)
+		if (settings.error)
+			settings.error(e)
 		throw e
 	}
 
@@ -142,6 +149,10 @@ export default function getopt(args, settings) {
 		else
 			results.parameters.push(parameter)
 
+	// Execute the callback.
+	if (settings.callback)
+		settings.callback(results, args, settings)
+
 	return results
 }
 
@@ -154,11 +165,10 @@ export default function getopt(args, settings) {
  * @throws {ArgumentError} Thrown if any of the options are invalid.
  */
 export function* parse(args, settings) {
-	_validate(args, settings)
+	requireValid(args, settings)
 	settings = _normalize(settings)
 
-	for (let result of _parse0(args, settings))
-		yield result
+	yield* _parse0(args, settings)
 }
 
 /**
@@ -173,7 +183,7 @@ function* _parse0(args, settings) {
 	for (let result of _parse1(args, settings)) {
 		// Execute the callback that is defined for the option.
 		if (result.parameter.option?.callback != null)
-			result.parameter.option.callback(result)
+			result.parameter.option.callback(result, args, settings)
 
 		yield result
 	}
@@ -208,10 +218,11 @@ function* _parse1(args, settings) {
 	for (let arg of args) {
 		if (!endOptions) {
 			// Finish processing a parsed option that is waiting for an argument.
-			if (resultAwaitingArgument != null) {
-				if (resultAwaitingArgument.option.argument === true || resultAwaitingArgument.option.argument === 'required' || arg[0] !== '-')
-					resultAwaitingArgument.value = arg
+			if (resultAwaitingArgument) {
+				if (!resultAwaitingArgument.parameter.option.optional || arg[0] !== '-')
+					resultAwaitingArgument.parameter.value = arg
 				yield resultAwaitingArgument
+				resultAwaitingArgument = null
 				continue
 			}
 
@@ -236,18 +247,13 @@ function* _parse1(args, settings) {
 						throw new Error('unrecognized option \'-' + longOption + '\'')
 
 					// Validate the value of the long option.
-					switch (option.argument) {
-						case false:
-						case 'none':
-							if (value.length > 0)
-								throw new Error('option \'--' + longOption + '\' doesn\'t take an argument')
-							break
-						case true:
-						case 'required':
-							if (value.length === 0)
-								throw new Error('option \'--' + longOption + '\' requires an argument')
-							break
+					if (value) {
+						if (!option.argument) {
+							throw new Error('option \'--' + longOption + '\' doesn\'t take an argument')
+						}
 					}
+					else if (option.argument && !option.optional)
+						throw new Error('option \'--' + longOption + '\' requires an argument')
 
 					// Generate the optional parameter.
 					yield {
@@ -281,15 +287,15 @@ function* _parse1(args, settings) {
 							}
 
 							// Handle the cases where the option may expect an argument.
-							if (option.argument == null || option.argument === false || option.argument === 'none')
+							if (!option.argument)
 								yield result
-							else if (j < arg.length && (option.argument === true || option.argument === 'required')) {
+							else if (j < arg.length) {
 								result.parameter.value = arg.substring(j)
 								yield result
 								j = arg.length
 							}
 							else
-								argResult = result
+								resultAwaitingArgument = result
 
 							i = j
 							continue outer
@@ -322,12 +328,23 @@ function* _parse1(args, settings) {
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
  */
-function _validate(args, settings) {
+function requireValid(args, settings) {
+	for (let err of _validate(args, settings))
+		throw new ArgumentError(err)
+}
+
+/**
+ * Validates the configuration of the parser.
+ * @param {Array.<String>}  args       The command-line arguments.
+ * @param {getopt~Settings} [settings] The configuration of the parser.
+ * @yields {String} The validation errors.
+ */
+function* _validate(args, settings) {
 	// Validate 'args'.
 	if (args == null)
-		throw new ArgumentError('args is required')
+		yield 'args is required'
 	if (typeof args[Symbol.iterator] !== 'function')
-		throw new ArgumentError('args must be iterable')
+		yield 'args must be iterable'
 
 	// Validate 'settings'.
 	if (settings == null)
@@ -336,98 +353,79 @@ function _validate(args, settings) {
 	// Validate 'settings.options'.
 	if (settings.options != null) {
 		if (!Array.isArray(settings.options))
-			throw new ArgumentError('settings.options must be an array')
+			yield 'settings.options must be an array'
 
 		for (let [i, option] of settings.options.entries()) {
 			// Validate 'settings.options[i].name'.
 			if (option.name != null) {
 				if (isString(option.name)) {
 					if (option.name.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].name must not be an empty string')
+						yield 'settings.options[' + i + '].name must not be an empty string'
 				}
 				else if (Array.isArray(option.name)) {
-					if (option.name.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].name must not be an empty array')
 					for (let [j, name] of option.name.entries()) {
 						// Validate 'settings.options[i].name[j]'.
 						if (!isString(name))
-							throw new ArgumentError('settings.options[' + i + '].name[' + j + '] must be a string')
+							yield 'settings.options[' + i + '].name[' + j + '] must be a string'
 						if (name.length === 0)
-							throw new ArgumentError('settings.options[' + i + '].name[' + j + '] must not be an empty string')
+							yield 'settings.options[' + i + '].name[' + j + '] must not be an empty string'
 					}
 				}
 				else
-					throw new ArgumentError('settings.options[' + i + '].name must be a string or an array of strings')
+					yield 'settings.options[' + i + '].name must be a string or an array of strings'
 			}
 
 			// Validate 'settings.options[i].short'.
 			if (option.short != null) {
 				if (isString(option.short)) {
 					if (option.short.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].short must not be an empty string')
+						yield 'settings.options[' + i + '].short must not be an empty string'
 				}
 				else if (Array.isArray(option.short)) {
-					if (option.short.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].short must not be an empty array')
 					for (let [j, short] of option.short.entries()) {
 						// Validate 'settings.options[i].short[j]'.
 						if (!isString(short))
-							throw new ArgumentError('settings.options[' + i + '].short[' + j + '] must be a string')
+							yield 'settings.options[' + i + '].short[' + j + '] must be a string'
 						if (short.length === 0)
-							throw new ArgumentError('settings.options[' + i + '].short[' + j + '] must not be an empty string')
+							yield 'settings.options[' + i + '].short[' + j + '] must not be an empty string'
 					}
 				}
 				else
-					throw new ArgumentError('settings.options[' + i + '].short must be a string or an array of strings')
+					yield 'settings.options[' + i + '].short must be a string or an array of strings'
 			}
 
 			// Validate 'settings.options[i].long'.
 			if (option.long != null) {
 				if (isString(option.long)) {
 					if (option.long.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].long must not be an empty string')
+						yield 'settings.options[' + i + '].long must not be an empty string'
 				}
 				else if (Array.isArray(option.long)) {
-					if (option.long.length === 0)
-						throw new ArgumentError('settings.options[' + i + '].long must not be an empty array')
 					for (let [j, long] of option.long.entries()) {
 						// Validate 'settings.options[i].long[j]'.
 						if (!isString(long))
-							throw new ArgumentError('settings.options[' + i + '].long[' + j + '] must be a string')
+							yield 'settings.options[' + i + '].long[' + j + '] must be a string'
 						if (long.length === 0)
-							throw new ArgumentError('settings.options[' + i + '].long[' + j + '] must not be an empty string')
+							yield 'settings.options[' + i + '].long[' + j + '] must not be an empty string'
 					}
 				}
 				else
-					throw new ArgumentError('settings.options[' + i + '].long must be a string or an array of strings')
+					yield 'settings.options[' + i + '].long must be a string or an array of strings'
 			}
 
 			// Validate that 'settings.options[i]' has a short or long name.
 			if ((option.short == null || option.short.length === 0) && (option.long == null || option.long.length === 0))
-				throw new ArgumentError('settings.options[' + i + '] must have a short or long name')
+				yield 'settings.options[' + i + '] must have a short or long name'
 
 			// Validate 'option.options[i].description'.
 			if (option.description != null)
 				if (!isString(option.description))
-					throw new ArgumentError('settings.options[' + i + '].description must be a string')
-
-			// Validate 'settings.options[i].argument'.
-			if (option.argument != null)
-				switch (option.argument) {
-					case false:
-					case true:
-					case 'none':
-					case 'optional':
-					case 'required':
-						break
-					default:
-						throw new ArgumentError('settings.options[' + i + '].argument must be a boolean or a string of \'none\', \'optional\', or \'required\'')
-				}
+					yield 'settings.options[' + i + '].description must be a string'
 
 			// Validate 'settings.options[i].callback'.
 			if (option.callback != null)
 				if (typeof option.callback !== 'function')
-					throw new ArgumentError('settings.options[' + i + '].callback must be a function')
+					yield 'settings.options[' + i + '].callback must be a function'
 		}
 	}
 }
@@ -454,19 +452,39 @@ function _normalize(settings) {
 }
 
 /**
- * The function that will be called by default to print the usage information.
+ * Displays the usage information and exits.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  */
 export function usage(settings) {
-	let program = settings.usage?.program ?? path.basename(process.argv[1]).split('.', 1)[0]
-	process.stdout.write('Usage: ' + program + ' ' + settings.usage + '\n')
+	// Allow this function to be used as the callback of an option.
+	let args = []
+	if (arguments.length === 3) {
+		args = arguments[1]
+		settings = arguments[2]
+	}
 
-	if (settings.options != null && settings.options.length > 0) {
+	// Normalize the settings in case this function was called by the application.
+	requireValid(args, settings)
+	settings = _normalize(settings)
+
+	// Write the usage header.
+	if (settings.usage?.header)
+		process.stdout.write(settings.usage.header + '\n')
+
+	// Write the usage specification.
+	let program = settings.usage?.program ?? path.basename(process.argv[1]).split('.', 1)[0]
+	process.stdout.write('Usage: ' + program)
+	if (settings.usage?.spec)
+		process.stdout.write(' ' + settings.usage.spec)
+	process.stdout.write('\n')
+
+	// Write the options.
+	if (settings.options && settings.options.length > 0) {
 		process.stdout.write('Options:\n')
 
-		let optionItems = settings.options
+		let options = settings.options
 			.map(function(option) {
-				let argumentItems =
+				let symbols =
 					option.short.map(function(x) { return '-' + x }).concat(
 					option.long.map(function(x) { return '--' + x }))
 
@@ -474,30 +492,33 @@ export function usage(settings) {
 				if (argument != null)
 					argument = (option.optional ? '[' : '<') + argument + (option.optional ? ']' : '>')
 
-				let argumentString = argumentItems.join(' ')
+				let spec = symbols.join(' ')
 				if (argument != null)
-					argumentString += (option.long.length > 0 ? '=' : ' ') + argument
+					spec += (option.long.length > 0 ? '=' : ' ') + argument
 
 				return {
-					arguments: argumentItems,
-					argument: argument,
-					argumentString: argumentString,
+					spec: spec,
 					description: option.description
 				}
 			})
 
-		let argumentStringLength = Math.max(...optionItems.map(function(x) { return x.argumentString.length }))
-		let descriptionLength = Math.max(...optionItems.map(function(x) { return x.description.length }))
+		// Calculate the maximum length of the options.
+		let specLength = Math.max(...options.map(function(x) { return x.spec.length }))
+		let descriptionLength = Math.max(...options.map(function(x) { return x.description.length }))
 
-		// Handle the case where the argument string and the description won't fit in the terminal.
-		if (argumentStringLength + descriptionLength + 3 > process.stdout.columns) {
+		// Handle the case where the specification and description won't fit in the terminal.
+		if (specLength + descriptionLength + 3 > process.stdout.columns) {
 			// TODO
 		}
 
-		for (let option of optionItems) {
-			process.stdout.write('  -')
+		for (let option of options) {
+			process.stdout.write('  ' + option.spec.padEnd(specLength) + ' ' + option.description + '\n')
 		}
 	}
+
+	// Write the usage footer.
+	if (settings.usage?.footer)
+		process.stdout.write(settings.usage.footer + '\n')
 
 	process.exit()
 }
