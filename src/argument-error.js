@@ -6,7 +6,7 @@
 export default class ArgumentError extends Error {
 	/**
 	 * Initializes a new instance.
-	 * @param {String} message A description of the error.
+	 * @param {string} message A description of the error.
 	 */
 	constructor(message) {
 		super(message)

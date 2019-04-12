@@ -9,16 +9,16 @@ import ArgumentError from './argument-error'
 
 /**
  * The configuration of the parser.
- * @typedef {Object} getopt~Settings
- * @property {Array.<getopt~Option>} [options]       The specification of the optional parameters.
- * @property {Object}                [usage]         The configuration of the usage.
- * @property {String}                [usage.header]  The content that will be displayed before the usage specification.
- * @property {String}                [usage.footer]  The content that will be displayed after the usage specification.
- * @property {String}                [usage.program] The executable name of the calling program.
- * @property {String}                [usage.spec]    A line that contains the usage specification.
+ * @typedef {object} getopt~Settings
+ * @property {array.<getopt~Option>} [options]       The specification of the optional parameters.
+ * @property {object}                [usage]         The configuration of the usage.
+ * @property {string}                [usage.header]  The content that will be displayed before the usage specification.
+ * @property {string}                [usage.footer]  The content that will be displayed after the usage specification.
+ * @property {string}                [usage.program] The executable name of the calling program.
+ * @property {string}                [usage.spec]    A line that contains the usage specification.
  * @property {getopt~Callback}       [callback]      A function that will be called after parsing.
- * @property {String}                [version]       The version of the calling program.
- * @property {Function.<Error>}      [error=error]   A function that will be called when an error occurs.
+ * @property {string}                [version]       The version of the calling program.
+ * @property {getopt~ErrorCallback}  [error=error]   A function that will be called when an error occurs.
  */
 
 /**
@@ -35,13 +35,13 @@ const _defaultSettings = {
 
 /**
  * The specification of an optional parameter.
- * @typedef {Object} getopt~Option
- * @property {String}                [name]           The name(s) by which the option will be indexed.
- * @property {Array.<String>|String} [short]          The short form(s) by which the option can be specified on the command line.
- * @property {Array.<String>|String} [long]           The long form(s) by which the option can be specified on the command line.
- * @property {String}                [description]    A description that will be displayed in the usage documentation.
- * @property {Boolean|String}        [argument]       A value indicating whether the option expects an argument.
- * @property {Boolean}               [optional=false] A value indicating whether the argument is optional.
+ * @typedef {object} getopt~Option
+ * @property {array.<string>|string} [name]           The name(s) by which the option will be indexed.
+ * @property {array.<string>|string} [short]          The short form(s) by which the option can be specified on the command line.
+ * @property {array.<string>|string} [long]           The long form(s) by which the option can be specified on the command line.
+ * @property {string}                [description]    A description that will be displayed in the usage documentation.
+ * @property {boolean|String}        [argument]       A value indicating whether the option expects an argument.
+ * @property {boolean}               [optional=false] A value indicating whether the argument is optional.
  * @property {getopt~Callback}       [callback]       A function that will be called when this option is parsed.
  */
 
@@ -58,44 +58,50 @@ const _defaultOption = {
  * A function that will be called when a command-line argument is parsed.
  * @callback getopt~Callback
  * @param {getopt~Result}   result   The parsed result.
- * @param {Array.<String>}  args     The command-line arguments.
+ * @param {array.<string>}  args     The command-line arguments.
  * @param {getopt~Settings} settings The configuration of the parser.
  */
 
 /**
  * A parsed result.
- * @typedef {Object} getopt~Result
+ * @typedef {object} getopt~Result
  * @property {getopt~ParsedOption|getopt~ParsedParameter} parameter   The parameter that was generated.
- * @property {Number}                                     index       The index of the command-line argument that was parsed to generate the parameter.
- * @property {Number}                                     [subIndex]  The index of the portion of the command-line argument that was parsed to generate the parameter.
- * @property {Number}                                     [subLength] The length of the portion of the command-line argument that was parsed to generate the parameter.
+ * @property {number}                                     index       The index of the command-line argument that was parsed to generate the parameter.
+ * @property {number}                                     [subIndex]  The index of the portion of the command-line argument that was parsed to generate the parameter.
+ * @property {number}                                     [subLength] The length of the portion of the command-line argument that was parsed to generate the parameter.
  */
 
 /**
  * The sanitized results.
- * @typedef {Object} getopt~Results
- * @property {Array.<getopt~ParsedOption|getopt~ParsedParameter> sequence   The optional and positional parameters in order of appearance.
- * @property {Object.<String, getopt~ParsedOption>}              options    The optional parameters indexed by their name.
- * @property {Array.<getopt~ParsedParameter>}                    parameters The positional parameters indexed by their position.
+ * @typedef {object} getopt~Results
+ * @property {array.<getopt~ParsedOption|getopt~ParsedParameter> sequence   The optional and positional parameters in order of appearance.
+ * @property {object.<string, getopt~ParsedOption>}              options    The optional parameters indexed by their name.
+ * @property {array.<getopt~ParsedParameter>}                    parameters The positional parameters indexed by their position.
  */
 
 /**
  * An optional parameter that was parsed from the command-line arguments.
- * @typedef {Object} getopt~ParsedOption
+ * @typedef {object} getopt~ParsedOption
  * @property {getopt~Option}         option The specification of the parameter.
- * @property {Array.<String>|String} value  The value(s) that were assigned to the parameter.
+ * @property {array.<string>|string} value  The value(s) that were assigned to the parameter.
  */
 
 /**
  * A positional parameter that was parsed from the command-line arguments.
- * @typedef {Object} getopt~ParsedParameter
- * @property {Number} position The position of the parameter.
- * @property {String} value    The content of the parameter.
+ * @typedef {object} getopt~ParsedParameter
+ * @property {number} position The position of the parameter.
+ * @property {string} value    The content of the parameter.
+ */
+
+/**
+ * A function that will be called when an error occurs.
+ * @callback getopt~ErrorCallback
+ * @param {Error} error The error.
  */
 
 /**
  * Parses the options from the command-line arguments and sanitizes the results.
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @returns {getopt~Results} The sanitized results.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
@@ -159,7 +165,7 @@ export default function getopt(args, settings) {
 /**
  * Parses the options from the command-line arguments.
  * @generator
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @yields {getopt~Result} The parsed results.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
@@ -174,7 +180,7 @@ export function* parse(args, settings) {
 /**
  * Parses the options from the command-line arguments.
  * @generator
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @yields {getopt~Result} The parsed results.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
@@ -192,7 +198,7 @@ function* _parse0(args, settings) {
 /**
  * Parses the options from the command-line arguments.
  * @generator
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @yields {getopt~Result} The parsed results.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
@@ -324,7 +330,7 @@ function* _parse1(args, settings) {
 
 /**
  * Validates the configuration of the parser.
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
  * @throws {ArgumentError} Thrown if any of the options are invalid.
  */
@@ -335,9 +341,9 @@ function requireValid(args, settings) {
 
 /**
  * Validates the configuration of the parser.
- * @param {Array.<String>}  args       The command-line arguments.
+ * @param {array.<string>}  args       The command-line arguments.
  * @param {getopt~Settings} [settings] The configuration of the parser.
- * @yields {String} The validation errors.
+ * @yields {string} The validation errors.
  */
 function* _validate(args, settings) {
 	// Validate 'args'.
@@ -525,6 +531,7 @@ export function usage(settings) {
 
 /**
  * The function that will be called by default when an error occurs.
+ * @param {Error} error The error.
  */
 export function error(error) {
 }
