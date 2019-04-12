@@ -1,6 +1,6 @@
 {
 	"name": "@davidosborn/getopt",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "A full-featured parser for command-line arguments",
 	"keywords": [
 		"argument",
