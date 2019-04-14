@@ -44,7 +44,8 @@
 	"dependencies": {
 		"flat-map-polyfill": "*",
 		"lodash.defaultsdeep": "*",
-		"lodash.isstring": "*"
+		"lodash.isstring": "*",
+		"word-wrap": "*"
 	},
 	"devDependencies": {
 		"@babel/cli": "*",

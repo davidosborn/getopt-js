@@ -5,20 +5,23 @@ import defaultsDeep from 'lodash.defaultsdeep'
 import isString from 'lodash.isstring'
 import path from 'path'
 import process from 'process'
+import wordWrap from 'word-wrap'
 import ArgumentError from './argument-error'
 
 /**
  * The configuration of the parser.
  * @typedef {object} getopt~Settings
- * @property {array.<getopt~Option>} [options]       The specification of the optional parameters.
- * @property {object}                [usage]         The configuration of the usage.
- * @property {string}                [usage.header]  The content that will be displayed before the usage specification.
- * @property {string}                [usage.footer]  The content that will be displayed after the usage specification.
- * @property {string}                [usage.program] The executable name of the calling program.
- * @property {string}                [usage.spec]    A line that contains the usage specification.
- * @property {getopt~Callback}       [callback]      A function that will be called after parsing.
- * @property {string}                [version]       The version of the calling program.
- * @property {getopt~ErrorCallback}  [error=error]   A function that will be called when an error occurs.
+ * @property {array.<getopt~Option>} [options]         The specification of the optional parameters.
+ * @property {object}                [usage]           The configuration of the usage.
+ * @property {string}                [usage.header]    The content that will be displayed before the usage specification.
+ * @property {string}                [usage.footer]    The content that will be displayed after the usage specification.
+ * @property {string}                [usage.program]   The executable name of the calling program.
+ * @property {string}                [usage.spec]      A line that contains the usage specification.
+ * @property {boolean}               [usage.wrap]      A value indicating whether to word wrap the usage.
+ * @property {boolean}               [usage.wrapWidth] The width at which to wrap the usage.
+ * @property {getopt~Callback}       [callback]        A function that will be called after parsing.
+ * @property {string}                [version]         The version of the calling program.
+ * @property {getopt~ErrorCallback}  [error]           A function that will be called when an error occurs.
  */
 
 /**
@@ -28,10 +31,17 @@ import ArgumentError from './argument-error'
 const _defaultSettings = {
 	options: [],
 	usage: {
-		spec: '[option]... [parameter]...'
-	},
-	error: error
+		spec: '[option]... [parameter]...',
+		wrap: true
+	}
 }
+
+/**
+ * The default width at which to wrap the usage.
+ * @constant {number}
+ * @default
+ */
+const _defaultWrapWidth = 80
 
 /**
  * The specification of an optional parameter.
@@ -473,9 +483,23 @@ export function usage(settings) {
 	requireValid(args, settings)
 	settings = _normalize(settings)
 
+	let wrapWidth = settings.usage.wrapWidth ?? process.stdout.columns ?? _defaultWrapWidth
+
 	// Write the usage header.
-	if (settings.usage?.header)
-		process.stdout.write(settings.usage.header + '\n')
+	if (settings.usage?.header) {
+		// Wrap the text on word boundaries.
+		let header = settings.usage.header
+		if (settings.usage?.wrap) {
+			header = header.match(/^\s*/)
+				+ wordWrap(header, {
+					indent: '',
+					width: wrapWidth - 1
+				})
+				+ header.match(/\s*$/)
+		}
+
+		process.stdout.write(header)
+	}
 
 	// Write the usage specification.
 	let program = settings.usage?.program ?? path.basename(process.argv[1]).split('.', 1)[0]
@@ -488,6 +512,7 @@ export function usage(settings) {
 	if (settings.options && settings.options.length > 0) {
 		process.stdout.write('Options:\n')
 
+		// Build the specification and description of each option.
 		let options = settings.options
 			.map(function(option) {
 				let symbols =
@@ -512,26 +537,38 @@ export function usage(settings) {
 		let specLength = Math.max(...options.map(function(x) { return x.spec.length }))
 		let descriptionLength = Math.max(...options.map(function(x) { return x.description.length }))
 
-		// Handle the case where the specification and description won't fit in the terminal.
-		if (specLength + descriptionLength + 3 > process.stdout.columns) {
-			// TODO
-		}
-
+		// Write the options.
 		for (let option of options) {
-			process.stdout.write('  ' + option.spec.padEnd(specLength) + ' ' + option.description + '\n')
+			// Wrap the description on word boundaries.
+			let description = option.description
+			if (settings.usage?.wrap && specLength + descriptionLength + 3 > wrapWidth) {
+				description = ' '.repeat(specLength + 3) + description
+				description = wordWrap(description, {
+					indent: ' '.repeat(specLength + 3),
+					width: wrapWidth - 1
+				})
+				description = description.substring((specLength + 3) * 2)
+			}
+
+			process.stdout.write('  ' + option.spec.padEnd(specLength) + ' ' + description + '\n')
 		}
 	}
 
 	// Write the usage footer.
-	if (settings.usage?.footer)
-		process.stdout.write(settings.usage.footer + '\n')
+	if (settings.usage?.footer) {
+		// Wrap the text on word boundaries.
+		let footer = settings.usage.footer
+		if (settings.usage?.wrap) {
+			footer = footer.match(/^\s*/)
+				+ wordWrap(footer, {
+					indent: '',
+					width: wrapWidth - 1
+				})
+				+ footer.match(/\s*$/)
+		}
+
+		process.stdout.write(footer)
+	}
 
 	process.exit()
-}
-
-/**
- * The function that will be called by default when an error occurs.
- * @param {Error} error The error.
- */
-export function error(error) {
 }
