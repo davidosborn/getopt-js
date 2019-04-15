@@ -13,8 +13,9 @@ import ArgumentError from './argument-error'
  * @typedef {object} getopt~Settings
  * @property {array.<getopt~Option>} [options]         The specification of the optional parameters.
  * @property {object}                [usage]           The configuration of the usage.
- * @property {string}                [usage.header]    The content that will be displayed before the usage specification.
+ * @property {string}                [usage.first]     A value indicating whether to only show the first short and long option.
  * @property {string}                [usage.footer]    The content that will be displayed after the usage specification.
+ * @property {string}                [usage.header]    The content that will be displayed before the usage specification.
  * @property {string}                [usage.program]   The executable name of the calling program.
  * @property {string}                [usage.spec]      A line that contains the usage specification.
  * @property {boolean}               [usage.wrap]      A value indicating whether to word wrap the usage.
@@ -31,6 +32,7 @@ import ArgumentError from './argument-error'
 const _defaultSettings = {
 	options: [],
 	usage: {
+		first: true,
 		spec: '[option]... [parameter]...',
 		wrap: true
 	}
@@ -260,16 +262,16 @@ function* _parse1(args, settings) {
 					// Look up the specification of the long option.
 					let option = longOptions.get(longOption)
 					if (option === undefined)
-						throw new Error('unrecognized option \'-' + longOption + '\'')
+						throw new Error('Unrecognized option \'--' + longOption + '\'.')
 
 					// Validate the value of the long option.
 					if (value) {
 						if (!option.argument) {
-							throw new Error('option \'--' + longOption + '\' doesn\'t take an argument')
+							throw new Error('Option \'--' + longOption + '\' doesn\'t take an argument.')
 						}
 					}
 					else if (option.argument && !option.optional)
-						throw new Error('option \'--' + longOption + '\' requires an argument')
+						throw new Error('Option \'--' + longOption + '\' requires an argument.')
 
 					// Generate the optional parameter.
 					yield {
@@ -317,7 +319,7 @@ function* _parse1(args, settings) {
 							continue outer
 						}
 
-						throw new Error('unrecognized option \'-' + shortOption + '\'')
+						throw new Error('Unrecognized option \'-' + shortOption + '\'.')
 					}
 				}
 
@@ -483,13 +485,13 @@ export function usage(settings) {
 	requireValid(args, settings)
 	settings = _normalize(settings)
 
-	let wrapWidth = settings.usage.wrapWidth ?? process.stdout.columns ?? _defaultWrapWidth
+	let wrapWidth = settings.usage?.wrapWidth ?? process.stdout.columns ?? _defaultWrapWidth
 
 	// Write the usage header.
 	if (settings.usage?.header) {
 		// Wrap the text on word boundaries.
 		let header = settings.usage.header
-		if (settings.usage?.wrap) {
+		if (settings.usage.wrap) {
 			header = header.match(/^\s*/)
 				+ wordWrap(header, {
 					indent: '',
@@ -515,17 +517,21 @@ export function usage(settings) {
 		// Build the specification and description of each option.
 		let options = settings.options
 			.map(function(option) {
-				let symbols =
-					option.short.map(function(x) { return '-' + x }).concat(
-					option.long.map(function(x) { return '--' + x }))
+				let spec = []
+					.concat(
+						option.short
+							.slice(0, settings.usage?.first ? 1 : Number.MAX_SAFE_INTEGER)
+							.map(function(x) { return '-' + x }),
+						option.long
+							.slice(0, settings.usage?.first ? 1 : Number.MAX_SAFE_INTEGER)
+							.map(function(x) { return '--' + x }))
+					.join(' ')
 
-				let argument = option.argument
-				if (argument != null)
-					argument = (option.optional ? '[' : '<') + argument + (option.optional ? ']' : '>')
-
-				let spec = symbols.join(' ')
-				if (argument != null)
-					spec += (option.long.length > 0 ? '=' : ' ') + argument
+				if (option.argument)
+					spec += (option.long.length > 0 ? '=' : ' ')
+						+ (option.optional ? '[' : '<')
+						+ option.argument
+						+ (option.optional ? ']' : '>')
 
 				return {
 					spec: spec,
