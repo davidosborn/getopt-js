@@ -15,12 +15,12 @@
 	"homepage": "https://github.com/davidosborn/getopt#readme",
 	"bugs": {
 		"url": "https://github.com/davidosborn/getopt/issues",
-		"email": "david@davidosborn.io"
+		"email": "davidcosborn@gmail.com"
 	},
 	"license": "MIT",
 	"author": {
 		"name": "David Osborn",
-		"email": "david@davidosborn.io",
+		"email": "davidcosborn@gmail.com",
 		"url": "http://davidosborn.io/"
 	},
 	"files": [
