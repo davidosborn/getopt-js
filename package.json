@@ -24,6 +24,7 @@
 		"url": "http://davidosborn.io/"
 	},
 	"files": [
+		"index.js",
 		"lib",
 		"src"
 	],
@@ -35,6 +36,7 @@
 	},
 	"scripts": {
 		"build": "npx babel -d lib src",
+		"doc": "./node_modules/.bin/jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/out -r src README.md",
 		"lint": "npx eslint src test",
 		"jest": "npx jest",
 		"prepublishOnly": "npm run build",
@@ -56,7 +58,8 @@
 		"babel-jest": "*",
 		"eslint": "*",
 		"eslint-plugin-jest": "*",
-		"jest": "*"
+		"jest": "*",
+		"jsdoc": "*"
 	},
 	"publishConfig": {
 		"access": "public"
