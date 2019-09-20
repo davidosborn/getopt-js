@@ -1,6 +1,11 @@
 # Getopt
 
-A full-featured parser of command-line arguments for modern JavaScript.
+A parser of command-line arguments for modern JavaScript.
+
+## Features
+
+* Supports any number of short and long names for an option.
+* Can generate usage documentation automatically.
 
 ## Library usage
 
@@ -70,3 +75,7 @@ You can run ``getopt`` from the command line to parse the arguments of a shell s
 The first argument must be a path to a JSON file that contains the settings.
 The remaining arguments will be parsed according to the settings.
 This particular use case is more of a toy for now.
+
+## See also
+
+* [The C++ version of this library](https://github.com/davidosborn/getopt-cxx)

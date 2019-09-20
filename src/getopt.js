@@ -13,7 +13,7 @@ import ArgumentError from './argument-error'
  * @typedef {object} getopt~Settings
  * @property {array.<getopt~Option>} [options]         The specification of the optional parameters.
  * @property {object}                [usage]           The configuration of the usage.
- * @property {string}                [usage.first]     A value indicating whether to only show the first short and long option.
+ * @property {boolean}               [usage.first]     A value indicating whether to only show the first short and long option.
  * @property {string}                [usage.footer]    The content that will be displayed after the usage specification.
  * @property {string}                [usage.header]    The content that will be displayed before the usage specification.
  * @property {string}                [usage.program]   The executable name of the calling program.
