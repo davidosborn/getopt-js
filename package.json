@@ -21,61 +21,50 @@
 	"author": {
 		"name": "David Osborn",
 		"email": "davidcosborn@gmail.com",
-		"url": "http://davidosborn.io/"
+		"url": "https://davidosborn.dev/"
 	},
+	"type": "module",
 	"files": [
-		"index.js",
-		"lib",
+		"doc",
 		"src"
 	],
-	"main": "lib/getopt.js",
 	"bin": "index.js",
+	"directories": {
+		"doc": "doc/json/bin"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/davidosborn/getopt"
 	},
 	"scripts": {
-		"build": "npx babel -d lib src",
-		"doc": "./node_modules/.bin/jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/out -r src README.md",
+		"build": "npm run doc",
+		"clean": "rm -rf doc/jsdoc/bin",
+		"doc": "npx jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/bin -r src README.md",
 		"lint": "npx eslint src test",
-		"jest": "npx jest",
+		"jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js test",
 		"prepublishOnly": "npm run build",
 		"start": "node index",
 		"test": "npm run lint && npm run jest"
 	},
 	"dependencies": {
-		"flat-map-polyfill": "*",
-		"lodash.defaultsdeep": "*",
-		"lodash.isstring": "*",
-		"word-wrap": "*"
+		"es-main": "1.2.0",
+		"word-wrap": "1.2.3"
 	},
 	"devDependencies": {
-		"@babel/cli": "*",
-		"@babel/core": "*",
-		"@babel/register": "*",
-		"@davidosborn/babel-preset": "*",
-		"babel-eslint": "*",
-		"babel-jest": "*",
-		"eslint": "*",
-		"eslint-plugin-jest": "*",
-		"jest": "*",
-		"jsdoc": "*"
+		"eslint": "8.30.0",
+		"eslint-plugin-jest": "27.1.7",
+		"jest": "29.3.1",
+		"jsdoc": "4.0.0"
 	},
 	"publishConfig": {
 		"access": "public"
-	},
-	"babel": {
-		"presets": [
-			"@davidosborn/babel-preset"
-		]
 	},
 	"eslintConfig": {
 		"env": {
 			"node": true
 		},
-		"parser": "babel-eslint",
 		"parserOptions": {
-			"ecmaVersion": 9,
+			"ecmaVersion": "latest",
 			"sourceType": "module"
 		},
 		"plugins": [

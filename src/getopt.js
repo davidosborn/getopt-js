@@ -1,28 +1,23 @@
-'use strict'
-
-import 'flat-map-polyfill'
-import defaultsDeep from 'lodash.defaultsdeep'
-import isString from 'lodash.isstring'
 import path from 'path'
 import process from 'process'
 import wordWrap from 'word-wrap'
-import ArgumentError from './argument-error'
+import ArgumentError from './argument-error.js'
+import './shims/string.js' // String.isString
 
 /**
  * The configuration of the parser.
  * @typedef {object} getopt~Settings
- * @property {array.<getopt~Option>} [options]         The specification of the optional parameters.
- * @property {object}                [usage]           The configuration of the usage.
- * @property {boolean}               [usage.first]     A value indicating whether to only show the first short and long option.
- * @property {string}                [usage.footer]    The content that will be displayed after the usage specification.
- * @property {string}                [usage.header]    The content that will be displayed before the usage specification.
- * @property {string}                [usage.program]   The executable name of the calling program.
- * @property {string}                [usage.spec]      A line that contains the usage specification.
- * @property {boolean}               [usage.wrap]      A value indicating whether to word wrap the usage.
- * @property {boolean}               [usage.wrapWidth] The width at which to wrap the usage.
- * @property {getopt~Callback}       [callback]        A function that will be called after parsing.
- * @property {string}                [version]         The version of the calling program.
- * @property {getopt~ErrorCallback}  [error]           A function that will be called when an error occurs.
+ * @property {getopt~Callback}       [callback]      A function that will be called after parsing.
+ * @property {getopt~ErrorCallback}  [error]         A function that will be called when an error occurs.
+ * @property {boolean}               [first]         A value indicating whether to only show the first short and long option.
+ * @property {array.<getopt~Option>} [options]       The specification of the optional parameters.
+ * @property {object|string}         [usage]         The configuration of the usage.
+ * @property {string}                [usage.footer]  The content that will be displayed after the usage specification.
+ * @property {string}                [usage.header]  The content that will be displayed before the usage specification.
+ * @property {string}                [usage.program] The executable name of the calling program.
+ * @property {string}                [usage.spec]    A line that contains the usage specification.
+ * @property {string}                [version]       The version of the calling program.
+ * @property {boolean|number}        [wrap]          @c true to enable word wrap, or the width at which to wrap.
  */
 
 /**
@@ -30,12 +25,10 @@ import ArgumentError from './argument-error'
  * @default
  */
 const _defaultSettings = {
+	first: true,
 	options: [],
-	usage: {
-		first: true,
-		spec: '[option]... [parameter]...',
-		wrap: true
-	}
+	usage: '[option]... [parameter]...',
+	wrap: true
 }
 
 /**
@@ -376,14 +369,14 @@ function* _validate(args, settings) {
 		for (let [i, option] of settings.options.entries()) {
 			// Validate 'settings.options[i].name'.
 			if (option.name != null) {
-				if (isString(option.name)) {
+				if (String.isString(option.name)) {
 					if (option.name.length === 0)
 						yield 'settings.options[' + i + '].name must not be an empty string'
 				}
 				else if (Array.isArray(option.name)) {
 					for (let [j, name] of option.name.entries()) {
 						// Validate 'settings.options[i].name[j]'.
-						if (!isString(name))
+						if (!String.isString(name))
 							yield 'settings.options[' + i + '].name[' + j + '] must be a string'
 						if (name.length === 0)
 							yield 'settings.options[' + i + '].name[' + j + '] must not be an empty string'
@@ -395,14 +388,14 @@ function* _validate(args, settings) {
 
 			// Validate 'settings.options[i].short'.
 			if (option.short != null) {
-				if (isString(option.short)) {
+				if (String.isString(option.short)) {
 					if (option.short.length === 0)
 						yield 'settings.options[' + i + '].short must not be an empty string'
 				}
 				else if (Array.isArray(option.short)) {
 					for (let [j, short] of option.short.entries()) {
 						// Validate 'settings.options[i].short[j]'.
-						if (!isString(short))
+						if (!String.isString(short))
 							yield 'settings.options[' + i + '].short[' + j + '] must be a string'
 						if (short.length === 0)
 							yield 'settings.options[' + i + '].short[' + j + '] must not be an empty string'
@@ -414,14 +407,14 @@ function* _validate(args, settings) {
 
 			// Validate 'settings.options[i].long'.
 			if (option.long != null) {
-				if (isString(option.long)) {
+				if (String.isString(option.long)) {
 					if (option.long.length === 0)
 						yield 'settings.options[' + i + '].long must not be an empty string'
 				}
 				else if (Array.isArray(option.long)) {
 					for (let [j, long] of option.long.entries()) {
 						// Validate 'settings.options[i].long[j]'.
-						if (!isString(long))
+						if (!String.isString(long))
 							yield 'settings.options[' + i + '].long[' + j + '] must be a string'
 						if (long.length === 0)
 							yield 'settings.options[' + i + '].long[' + j + '] must not be an empty string'
@@ -437,7 +430,7 @@ function* _validate(args, settings) {
 
 			// Validate 'option.options[i].description'.
 			if (option.description != null)
-				if (!isString(option.description))
+				if (!String.isString(option.description))
 					yield 'settings.options[' + i + '].description must be a string'
 
 			// Validate 'settings.options[i].callback'.
@@ -454,10 +447,11 @@ function* _validate(args, settings) {
  * @returns {getopt~Settings} The normalized configuration.
  */
 function _normalize(settings) {
-	settings = defaultsDeep(settings, _defaultSettings)
+	settings = Object.assign({}, _defaultSettings, settings)
+
 	settings.options = settings.options
 		.map(function(option) {
-			option = defaultsDeep(option, _defaultOption)
+			option = Object.assign({}, _defaultOption, option)
 			if (!Array.isArray(option.name))
 				option.name = option.name != null ? [option.name] : []
 			if (!Array.isArray(option.short))
@@ -466,6 +460,20 @@ function _normalize(settings) {
 				option.long = option.long != null ? [option.long] : []
 			return option
 		})
+
+	// Replace a usage string with a usage object.
+	if (String.isString(settings.usage)) {
+		settings.usage = {
+			spec: settings.usage
+		}
+	}
+
+	// Replace a boolean wrap with a wrap width.
+	settings.wrap = settings.wrap !== true
+		? +settings.wrap
+		: process.stdout.columns
+		?? _defaultWrapWidth
+
 	return settings
 }
 
@@ -485,17 +493,15 @@ export function usage(settings) {
 	requireValid(args, settings)
 	settings = _normalize(settings)
 
-	let wrapWidth = settings.usage?.wrapWidth ?? process.stdout.columns ?? _defaultWrapWidth
-
 	// Write the usage header.
 	if (settings.usage?.header) {
 		// Wrap the text on word boundaries.
 		let header = settings.usage.header
-		if (settings.usage.wrap) {
+		if (settings.wrap) {
 			header = header.match(/^\s*/)
 				+ wordWrap(header, {
 					indent: '',
-					width: wrapWidth - 1
+					width: settings.wrap - 1
 				})
 				+ header.match(/\s*$/)
 		}
@@ -504,7 +510,8 @@ export function usage(settings) {
 	}
 
 	// Write the usage specification.
-	let program = settings.usage?.program ?? path.basename(process.argv[1]).split('.', 1)[0]
+	const program = settings.usage?.program
+		?? path.basename(process.argv[1]).split('.', 1)[0]
 	process.stdout.write('Usage: ' + program)
 	if (settings.usage?.spec)
 		process.stdout.write(' ' + settings.usage.spec)
@@ -520,10 +527,10 @@ export function usage(settings) {
 				let spec = []
 					.concat(
 						option.short
-							.slice(0, settings.usage?.first ? 1 : Number.MAX_SAFE_INTEGER)
+							.slice(0, settings.first ? 1 : Number.MAX_SAFE_INTEGER)
 							.map(function(x) { return '-' + x }),
 						option.long
-							.slice(0, settings.usage?.first ? 1 : Number.MAX_SAFE_INTEGER)
+							.slice(0, settings.first ? 1 : Number.MAX_SAFE_INTEGER)
 							.map(function(x) { return '--' + x }))
 					.join(' ')
 
@@ -547,11 +554,11 @@ export function usage(settings) {
 		for (let option of options) {
 			// Wrap the description on word boundaries.
 			let description = option.description
-			if (settings.usage?.wrap && specLength + descriptionLength + 3 > wrapWidth) {
+			if (settings.wrap && specLength + descriptionLength + 3 > settings.wrap) {
 				description = ' '.repeat(specLength + 3) + description
 				description = wordWrap(description, {
 					indent: ' '.repeat(specLength + 3),
-					width: wrapWidth - 1
+					width: settings.wrap - 1
 				})
 				description = description.substring((specLength + 3) * 2)
 			}
@@ -564,11 +571,11 @@ export function usage(settings) {
 	if (settings.usage?.footer) {
 		// Wrap the text on word boundaries.
 		let footer = settings.usage.footer
-		if (settings.usage?.wrap) {
+		if (settings.wrap) {
 			footer = footer.match(/^\s*/)
 				+ wordWrap(footer, {
 					indent: '',
-					width: wrapWidth - 1
+					width: settings.wrap - 1
 				})
 				+ footer.match(/\s*$/)
 		}
@@ -578,3 +585,5 @@ export function usage(settings) {
 
 	process.exit()
 }
+
+getopt.usage = usage

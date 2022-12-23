@@ -1,7 +1,6 @@
-'use strict'
-
-import getopt, {usage} from '../src/getopt'
 import process from 'process'
+import {expect, jest, test} from '@jest/globals'
+import getopt from '../index.js'
 
 test('multi-character short-option sequence', function() {
 	let args = [
@@ -15,9 +14,10 @@ test('multi-character short-option sequence', function() {
 			{short: 'MP'}
 		]
 	}
-	let result = getopt(args, settings)
+
+	const result = getopt(args, settings)
 	expect(Object.keys(result.options)).toEqual(
-		expect.arrayContaining(...settings.options
+		expect.arrayContaining(settings.options
 			.map(function(option) {
 				return option.short
 			})
@@ -30,18 +30,12 @@ test('usage callback', function() {
 	let args = ['-h']
 	let settings = {
 		options: [
-			{short: 'h', callback: usage}
+			{short: 'h', callback: getopt.usage}
 		]
 	}
 
-	var processExit = process.exit
-	var processExitCalled = false
-	process.exit = function() {
-		processExitCalled = true
-	}
-
+	const mockExit = jest.spyOn(process, 'exit').mockImplementation()
 	getopt(args, settings)
-
-	expect(processExitCalled).toBeTruthy()
-	process.exit = processExit
+	expect(mockExit).toHaveBeenCalled()
+	mockExit.mockRestore()
 })

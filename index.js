@@ -1,25 +1,22 @@
-'use strict'
+import process from 'process'
+import esMain from 'es-main'
+import getopt from './src/getopt.js'
+import readConfig from './src/read-config.js'
 
-const process = require('process')
+export default getopt
 
-/**
- * Loads the entry point of the application.
- * @returns {Function} The entry point.
- */
-function requireMain() {
-	if (!'development'.localeCompare(process.env.NODE_ENV, {sensitivity: 'base'})) {
-		try {
-			return require('./lib/main')
-		}
-		catch (e) {
-			if (e.code !== 'MODULE_NOT_FOUND')
-				throw e
-		}
+if (esMain(import.meta)) {
+	const args = process.argv.slice(2)
+
+	if (args.length === 0) {
+		getopt.usage({
+			usage: '<config-file> [option]... [parameter]...'
+		})
 	}
 
-	require('@babel/register')
-	return require('./src/main')
-}
+	const config = args.shift()
+	const settings = readConfig(config)
 
-const main = requireMain().default
-exports.default = main(process.argv.slice(2))
+	const result = getopt(args, settings)
+	process.stdout.write(JSON.stringify(result))
+}

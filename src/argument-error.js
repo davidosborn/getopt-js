@@ -1,5 +1,3 @@
-'use strict'
-
 /**
  * An error that may occur when validating the arguments of a function.
  */
