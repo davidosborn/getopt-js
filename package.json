@@ -28,6 +28,7 @@
 		"doc",
 		"src"
 	],
+	"main": "index.js",
 	"bin": "index.js",
 	"directories": {
 		"doc": "doc/json/bin"
