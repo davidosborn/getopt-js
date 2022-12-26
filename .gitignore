@@ -1,5 +1,5 @@
-/doc/jsdoc/bin
-/node_modules/
+/doc/jsdoc/out
+/node_modules
 /npm-debug.log
 /package-lock.json
 /yarn.lock

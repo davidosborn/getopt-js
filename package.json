@@ -39,8 +39,8 @@
 	},
 	"scripts": {
 		"build": "npm run doc",
-		"clean": "rm -rf doc/jsdoc/bin",
-		"doc": "npx jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/bin -r src README.md",
+		"clean": "rm -rf doc/jsdoc/out",
+		"doc": "npx jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/out -r src README.md",
 		"lint": "npx eslint src test",
 		"jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js test",
 		"prepublishOnly": "npm run build",
