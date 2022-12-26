@@ -38,12 +38,13 @@
 		"url": "https://github.com/davidosborn/getopt"
 	},
 	"scripts": {
-		"build": "npm run doc",
+		"build": "",
 		"clean": "rm -rf doc/jsdoc/out",
+		"distclean": "npm run clean && rm -rf node_modules package-lock.json",
 		"doc": "npx jsdoc -c doc/jsdoc/conf.json -d doc/jsdoc/out -r src README.md",
 		"lint": "npx eslint src test",
 		"jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js test",
-		"prepublishOnly": "npm run build",
+		"prepublishOnly": "npm run clean && npm run test && npm run build && npm run doc",
 		"start": "node index",
 		"test": "npm run lint && npm run jest"
 	},
